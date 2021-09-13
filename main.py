@@ -1,7 +1,11 @@
+import configparser
 import json
 import os
 import getopt
+import shutil
 import sys
+from multiprocessing.dummy import Process
+from time import sleep
 
 from web3 import Web3
 from abi import abi
@@ -166,8 +170,6 @@ def Average():
         if bal < avg_val:
             sub = avg_val - bal
             return_value = TakeMoneyToAddr(sub, name)
-            if return_value["tx_hash"] is None:
-                break
             os.rename(filePath, filePath + "*")
         # bal_next = conn_remote.eth.get_balance(Web3.toChecksumAddress(name))
         print("(", num, ")", "addr:", name)
@@ -176,13 +178,59 @@ def Average():
 
 def number():
     names = os.listdir(keystroe)
+    num = 1
     for name in names:
         filePath = keystroe + '/' + name
-        file = open(filePath)
-        jsonFile = json.load(file)
-        addrFromPwd = jsonFile['address']
-        newPath = keystroe + '/' + addrFromPwd
+        newPath = keystroe + '/' + str(num)
         os.rename(filePath, newPath)
+        num += 1
+
+
+def genConfig():
+    # file = open(filePath)
+    # jsonFile = json.load(file)
+    # addrFromPwd = jsonFile['address']
+    names = os.listdir(keystroe)
+    # num = 1
+    for name in names:
+        try:
+            os.mkdir("config_list/" + name)
+        except Exception as e:
+            print(e)
+        shutil.copy(keystroe + '/' + name, "./config_list/" + name + "/pwd")
+        cf = configparser.ConfigParser()
+        cf.read("config")
+        cf.set("SYSTEM", "bc_pwd_file", "./" + "config" + "/" + "pwd")
+        cf.set("SYSTEM", "log", name)
+        cf.write(open("config", "w"))
+        shutil.copy("config", "./config_list/" + name)
+
+
+taskid = 0
+
+
+def runProcessForTest(num, dappdir="/home/ycq/PycharmProjects/DAPP/"):
+    global taskid
+    for i in range(1, num + 1):
+        try:
+            shutil.copytree("./config_list/" + str(i), dappdir + "config/")
+        except Exception as e:
+            print(e)
+            shutil.rmtree(dappdir + "config/")
+            shutil.copytree("./config_list/" + str(i), dappdir + "config/")
+        os.chdir("/home/ycq/PycharmProjects/DAPP/")
+        p = Process(target=testTask)
+        p.start()
+        sleep(1)
+        taskid += 1
+        os.chdir("/home/ycq/PycharmProjects/FLBC_Tester/")
+
+
+def testTask():
+    venv_python = "/home/ycq/PycharmProjects/DAPP/venv/bin/python"
+    print(os.getcwd())
+    print(venv_python + " " + "-m flask run -p " + str(30000 + taskid))
+    os.system(venv_python + " " + "-m flask run -p " + str(30000 + taskid))
 
 
 def usage():
@@ -194,6 +242,11 @@ def usage():
         '[--num or n]'
     )
 
+
+# genConfig()
+runProcessForTest(10)
+
+exit()
 
 if len(sys.argv) == 1:
     usage()
