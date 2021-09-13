@@ -127,7 +127,11 @@ def ShowAllAccounts():
     num = 1
     names = os.listdir(keystroe)
     for name in names:
-        print("(", num, ")", "addr:", name, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(name)))
+        filePath = keystroe + '/' + name
+        file = open(filePath)
+        jsonFile = json.load(file)
+        addr = jsonFile['address']
+        print("(", num, ")", "addr:", name, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(addr)))
         num += 1
 
 
@@ -221,7 +225,7 @@ def runProcessForTest(num, dappdir="/home/ycq/PycharmProjects/DAPP/"):
         os.chdir("/home/ycq/PycharmProjects/DAPP/")
         p = Process(target=testTask)
         p.start()
-        sleep(1)
+        sleep(2)
         taskid += 1
         os.chdir("/home/ycq/PycharmProjects/FLBC_Tester/")
 
@@ -243,17 +247,12 @@ def usage():
     )
 
 
-# genConfig()
-runProcessForTest(10)
-
-exit()
-
 if len(sys.argv) == 1:
     usage()
     sys.exit()
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hl:g:t:m:ans",
-                               ["help", "list=", "gen=", "tx=", "money=", "avg", "num", "send"])
+    opts, args = getopt.getopt(sys.argv[1:], "hl:g:t:m:anscr:",
+                               ["help", "list=", "gen=", "tx=", "money=", "avg", "num", "send", "cfg", "run="])
 except getopt.GetoptError:
     print("argv error,please input")
 
@@ -298,3 +297,8 @@ for opt, arg in opts:
         number()
     elif opt == '-s' or opt == '--send':
         ToValue(int(1e18))
+    elif opt == '-r' or opt == '--run':
+        num = int(arg)
+        runProcessForTest(num)
+    elif opt == '-c' or opt == '--cfg':
+        genConfig()
