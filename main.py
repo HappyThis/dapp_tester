@@ -13,11 +13,14 @@ from abi import abi
 conn_local = Web3(Web3.IPCProvider("/home/ycq/geth/geth.ipc"))
 conn_remote = Web3(Web3.HTTPProvider("http://10.112.147.205:8545"))
 conn_remote.eth.defaultAccount = Web3.toChecksumAddress('419b94500d78a8e48f30bfc569311b2ce992b1fa')
-keystroe = "/home/ycq/geth/keystore"
+keystroe = "/home/ycq/keys/committees/"
 contract_addr = '0x07AfA358C002Ef3B4597e64731b5cA15E4cf701f'
 contract = conn_remote.eth.contract(address=conn_remote.toChecksumAddress(contract_addr), abi=abi)
-
 current_noce = conn_remote.eth.getTransactionCount(conn_remote.eth.defaultAccount)
+
+tester_dir = os.getcwd()
+
+print(dir)
 
 # 准备私钥
 with open("password.pwd") as keyfile:
@@ -126,12 +129,14 @@ def Gen_New_Accounts(num, val=0):
 def ShowAllAccounts():
     num = 1
     names = os.listdir(keystroe)
+    names.sort()
     for name in names:
         filePath = keystroe + '/' + name
         file = open(filePath)
         jsonFile = json.load(file)
         addr = jsonFile['address']
-        print("(", num, ")", "addr:", name, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(addr)))
+        # print("(", num, ")", "addr:", addr, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(addr)))
+        print("\"" + Web3.toChecksumAddress(addr) + "\",")
         num += 1
 
 
@@ -197,44 +202,35 @@ def genConfig():
     names = os.listdir(keystroe)
     # num = 1
     for name in names:
-        try:
-            os.mkdir("config_list/" + name)
-        except Exception as e:
-            print(e)
-        shutil.copy(keystroe + '/' + name, "./config_list/" + name + "/pwd")
+        # try:
+        #     os.mkdir("config_list/" + name)
+        # except Exception as e:
+        #     print(e)
+        # shutil.copy(keystroe + '/' + name, "./config_list/" + name + "/pwd")
         cf = configparser.ConfigParser()
         cf.read("config")
-        cf.set("SYSTEM", "bc_pwd_file", "./" + "config" + "/" + "pwd")
+        cf.set("SYSTEM", "bc_pwd_file", "/home/ycq/keys/committees/" + name + "/pwd")
         cf.set("SYSTEM", "log", name)
         cf.write(open("config", "w"))
-        shutil.copy("config", "./config_list/" + name)
+        shutil.copy("config", keystroe + name)
 
 
-taskid = 0
-
-
-def runProcessForTest(num, dappdir="/home/ycq/PycharmProjects/DAPP/"):
-    global taskid
-    for i in range(1, num + 1):
-        try:
-            shutil.copytree("./config_list/" + str(i), dappdir + "config/")
-        except Exception as e:
-            print(e)
-            shutil.rmtree(dappdir + "config/")
-            shutil.copytree("./config_list/" + str(i), dappdir + "config/")
-        os.chdir("/home/ycq/PycharmProjects/DAPP/")
-        p = Process(target=testTask)
+def runProcessForTest(num, dappdir="/home/ycq/DAPP/", keysdir="/home/ycq/keys/committees/", offset=0):
+    for i in range(1 + offset, num + 1 + offset):
+        os.chdir(dappdir)
+        p = Process(target=testTask, kwargs={"id": i, "dir": dappdir, "keysdir": keysdir})
         p.start()
-        sleep(2)
-        taskid += 1
-        os.chdir("/home/ycq/PycharmProjects/FLBC_Tester/")
+        sleep(0.5)
+        os.chdir(tester_dir)
 
 
-def testTask():
-    venv_python = "/home/ycq/PycharmProjects/DAPP/venv/bin/python"
-    print(os.getcwd())
-    print(venv_python + " " + "-m flask run -p " + str(30000 + taskid))
-    os.system(venv_python + " " + "-m flask run -p " + str(30000 + taskid))
+def testTask(id, dir, keysdir):
+    venv_python = dir + "venv/bin/python"
+    print(venv_python + " " + "app.py -h 0.0.0.0 -p " + str(5000 + id) + " -c " + " " + keysdir + str(
+        id) + "/config")
+    os.system(
+        venv_python + " " + "app.py -h 0.0.0.0 -p " + str(5000 + id) + " -c " + " " + keysdir + str(
+            id) + "/config")
 
 
 def usage():
