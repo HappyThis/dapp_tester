@@ -1,13 +1,17 @@
-import configparser
-import json
-import os
 import getopt
-import shutil
 import sys
-from multiprocessing.dummy import Process
-from time import sleep
 
 from web3 import Web3
+
+from GenNewAccounts import Gen_New_Accounts
+from Pledge import TakeMoneyToContract
+from RecreateConfig import genConfig
+from RenumberToAllAccount import Renumber
+from RunProcess import runProcessForTest
+from SendMoneyToAccount import TakeMoneyToAddr
+from SendMoneyToAllAccount import ToValue
+from ShowAllAccounts import ShowAllAccounts
+from ShowSignalAccount import ShowSignalAccount
 from abi import abi
 
 conn_local = Web3(Web3.IPCProvider("/home/ycq/geth/geth.ipc"))
@@ -18,219 +22,10 @@ contract_addr = '0x07AfA358C002Ef3B4597e64731b5cA15E4cf701f'
 contract = conn_remote.eth.contract(address=conn_remote.toChecksumAddress(contract_addr), abi=abi)
 current_noce = conn_remote.eth.getTransactionCount(conn_remote.eth.defaultAccount)
 
-tester_dir = os.getcwd()
-
-print(dir)
-
 # 准备私钥
 with open("password.pwd") as keyfile:
     encrypted_key = keyfile.read()
     private_key = conn_remote.eth.account.decrypt(encrypted_key, "123456")
-
-
-def TakeMoneyToContract(value, pk=private_key):
-    try:
-        nonce = conn_remote.eth.getTransactionCount(conn_remote.eth.defaultAccount)
-        gas = contract.functions.TakeMoneyToContract().estimateGas({"value": value})
-        cur = contract.functions.TakeMoneyToContract().call({"value": value})
-        tx = contract.functions.TakeMoneyToContract().buildTransaction({
-            'chainId': conn_remote.eth.chainId,
-            'gas': gas * 2,
-            'gasPrice': conn_remote.eth.gasPrice * 2,
-            'nonce': nonce,
-            'value': value - gas * conn_remote.eth.gasPrice * 5
-        })
-        # 交易签名
-        signed_tx = conn_remote.eth.account.sign_transaction(tx, pk)
-        # 发往区块链
-        conn_remote.eth.sendRawTransaction(signed_tx.rawTransaction)
-        # 等待交易返回
-        conn_remote.eth.waitForTransactionReceipt(signed_tx.hash)
-        # 打印交易哈希
-        tx_hash = conn_remote.toHex(conn_remote.keccak(signed_tx.rawTransaction))
-        return_value = {
-            'tx_hash': tx_hash,
-            'cur': cur,
-            'error': None,
-        }
-        print(return_value)
-        return return_value
-    except Exception as e:
-        print(e)
-        return_value = {
-            'tx_hash': None,
-            'error': e.__str__()
-        }
-        return return_value
-
-
-def TakeMoneyToAddr(value, addr):
-    # global current_noce
-    # addr = Web3.toChecksumAddress(addr)
-    # try:
-    #     gas = contract.functions.TakeMoneyToAddr(addr, value).estimateGas()
-    #     cur = contract.functions.TakeMoneyToAddr(addr, value).call()
-    #     tx = contract.functions.TakeMoneyToAddr(addr, value).buildTransaction({
-    #         'chainId': conn_remote.eth.chainId,
-    #         'gas': gas * 2,
-    #         'gasPrice': conn_remote.eth.gasPrice * 2,
-    #         'nonce': current_noce,
-    #     })
-    #     current_noce += 1
-    #     # 交易签名
-    #     signed_tx = conn_remote.eth.account.sign_transaction(tx, private_key)
-    #     # 发往区块链
-    #     conn_remote.eth.sendRawTransaction(signed_tx.rawTransaction)
-    #     # # 等待交易返回
-    #     # conn_remote.eth.waitForTransactionReceipt(signed_tx.hash)
-    #     # # 打印交易哈希
-    #     tx_hash = conn_remote.toHex(conn_remote.keccak(signed_tx.rawTransaction))
-    #     return_value = {
-    #         'tx_hash': tx_hash,
-    #         'cur': cur,
-    #         'error': None
-    #     }
-    #     # print(return_value)
-    #     return return_value
-    # except Exception as e:
-    #     current_noce -= 1
-    #     print(e)
-    #     return_value = {
-    #         'tx_hash': None,
-    #         'error': e.__str__()
-    #     }
-    #     return return_value
-    conn_remote.eth.sendTransaction(
-        {
-            "from": Web3.toChecksumAddress("419b94500d78a8e48f30bfc569311b2ce992b1fa"),
-            "to": Web3.toChecksumAddress(addr),
-            "value": value,
-        }
-    )
-
-
-def Gen_New_Accounts(num, val=0):
-    for i in range(0, num):
-        conn_local.geth.personal.newAccount("123456")
-    names = os.listdir(keystroe)
-    for name in names:
-        old_path = keystroe + '/' + name
-        name_len = len(name)
-        if name_len <= 40:
-            continue
-        new_name = name[name_len - 40:]
-        if val > 0:
-            TakeMoneyToAddr(val, new_name)
-        new_path = keystroe + '/' + new_name
-        print(new_path)
-        os.rename(old_path, new_path)
-
-
-def ShowAllAccounts():
-    num = 1
-    names = os.listdir(keystroe)
-    names.sort()
-    for name in names:
-        filePath = keystroe + '/' + name
-        file = open(filePath)
-        jsonFile = json.load(file)
-        addr = jsonFile['address']
-        # print("(", num, ")", "addr:", addr, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(addr)))
-        print("\"" + Web3.toChecksumAddress(addr) + "\",")
-        num += 1
-
-
-def ShowSignalAccount(addr):
-    print("addr:", addr, " balance:", conn_remote.eth.get_balance(Web3.toChecksumAddress(addr)))
-
-
-def ToValue(val):
-    num = 0
-    names = os.listdir(keystroe)
-    for name in names:
-        TakeMoneyToAddr(val, name)
-        print(num)
-        num += 1
-
-
-def Average():
-    avg_val = int(1e18)
-    num = 1
-    names = os.listdir(keystroe)
-    names.sort()
-    for name in names:
-        if len(name) > 40:
-            print("(", num, ")", "addr:", name)
-            continue
-        bal = conn_remote.eth.get_balance(Web3.toChecksumAddress(name))
-        filePath = keystroe + '/' + name
-        # 准备私钥
-        with open(filePath) as keyfile:
-            ek = keyfile.read()
-            pk = conn_remote.eth.account.decrypt(ek, "123456")
-        if bal >= avg_val:
-            os.rename(filePath, filePath + "*")
-            print("add *")
-            continue
-            # sub = bal - avg_val
-            # conn_remote.eth.defaultAccount = Web3.toChecksumAddress(name)
-            # TakeMoneyToContract(sub, pk)
-            # conn_remote.eth.defaultAccount = Web3.toChecksumAddress('0x801FD03AfBe1c9FCBaE77bDc03C7812Ad9776d60')
-        if bal < avg_val:
-            sub = avg_val - bal
-            return_value = TakeMoneyToAddr(sub, name)
-            os.rename(filePath, filePath + "*")
-        # bal_next = conn_remote.eth.get_balance(Web3.toChecksumAddress(name))
-        print("(", num, ")", "addr:", name)
-        num += 1
-
-
-def number():
-    names = os.listdir(keystroe)
-    num = 1
-    for name in names:
-        filePath = keystroe + '/' + name
-        newPath = keystroe + '/' + str(num)
-        os.rename(filePath, newPath)
-        num += 1
-
-
-def genConfig():
-    # file = open(filePath)
-    # jsonFile = json.load(file)
-    # addrFromPwd = jsonFile['address']
-    names = os.listdir(keystroe)
-    # num = 1
-    for name in names:
-        # try:
-        #     os.mkdir("config_list/" + name)
-        # except Exception as e:
-        #     print(e)
-        # shutil.copy(keystroe + '/' + name, "./config_list/" + name + "/pwd")
-        cf = configparser.ConfigParser()
-        cf.read("config")
-        cf.set("SYSTEM", "bc_pwd_file", "/home/ycq/keys/committees/" + name + "/pwd")
-        cf.set("SYSTEM", "log", name)
-        cf.write(open("config", "w"))
-        shutil.copy("config", keystroe + name)
-
-
-def runProcessForTest(num, dappdir="/home/ycq/DAPP/", keysdir="/home/ycq/keys/committees/", offset=0):
-    for i in range(1 + offset, num + 1 + offset):
-        os.chdir(dappdir)
-        p = Process(target=testTask, kwargs={"id": i, "dir": dappdir, "keysdir": keysdir})
-        p.start()
-        sleep(0.5)
-        os.chdir(tester_dir)
-
-
-def testTask(id, dir, keysdir):
-    venv_python = dir + "venv/bin/python"
-    print(venv_python + " " + "app.py -h 0.0.0.0 -p " + str(5000 + id) + " -c " + " " + keysdir + str(
-        id) + "/config")
-    os.system(
-        venv_python + " " + "app.py -h 0.0.0.0 -p " + str(5000 + id) + " -c " + " " + keysdir + str(
-            id) + "/config")
 
 
 def usage():
@@ -287,10 +82,8 @@ for opt, arg in opts:
         arg = str.strip(arg)
         num = int(arg)
         TakeMoneyToContract(num)
-    elif opt == '-a' or opt == '--avg':
-        Average()
     elif opt == '-n' or opt == '--num':
-        number()
+        Renumber()
     elif opt == '-s' or opt == '--send':
         ToValue(int(1e18))
     elif opt == '-r' or opt == '--run':
