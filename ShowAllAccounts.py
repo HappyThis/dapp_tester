@@ -11,7 +11,7 @@ def ShowAllAccounts():
     names = os.listdir(keystroe)
     names.sort()
     for name in names:
-        filePath = keystroe + name
+        filePath = keystroe + name + "/pwd"
         file = open(filePath)
         jsonFile = json.load(file)
         addr = jsonFile['address']
