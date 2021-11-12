@@ -1,6 +1,6 @@
 from web3 import Web3
 
-from main import conn_remote
+from conn import conn_remote
 
 
 def TakeMoneyToAddr(value, addr):

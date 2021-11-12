@@ -1,7 +1,7 @@
 import os
 
 from SendMoneyToAccount import TakeMoneyToAddr
-from main import keystroe
+from conn import keystroe
 
 
 def ToValue(val):

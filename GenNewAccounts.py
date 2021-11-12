@@ -1,7 +1,5 @@
 import os
-
-from SendMoneyToAccount import TakeMoneyToAddr
-from main import conn_local, keystroe
+from conn import keystroe, conn_local
 
 
 def Gen_New_Accounts(num, val=0):
@@ -15,6 +13,7 @@ def Gen_New_Accounts(num, val=0):
             continue
         new_name = name[name_len - 40:]
         if val > 0:
+            from SendMoneyToAccount import TakeMoneyToAddr
             TakeMoneyToAddr(val, new_name)
         new_path = keystroe + '/' + new_name
         print(new_path)

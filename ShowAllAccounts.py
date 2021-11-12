@@ -3,7 +3,7 @@ import os
 
 from web3 import Web3
 
-from main import keystroe
+from conn import keystroe
 
 
 def ShowAllAccounts():

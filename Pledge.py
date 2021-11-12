@@ -1,4 +1,4 @@
-from main import private_key, conn_remote, contract
+from conn import conn_remote, contract, private_key
 
 
 def TakeMoneyToContract(value, pk=private_key):

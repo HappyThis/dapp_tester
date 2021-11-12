@@ -1,6 +1,6 @@
 import os
 
-from main import keystroe
+from conn import keystroe
 
 
 def Renumber():

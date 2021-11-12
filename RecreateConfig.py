@@ -2,7 +2,7 @@ import configparser
 import os
 import shutil
 
-from main import keystroe
+from conn import keystroe
 
 
 def genConfig():
