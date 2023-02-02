@@ -11,6 +11,7 @@ from SendMoneyToAllAccount import ToValue
 from ShowAllAccounts import ShowAllAccounts
 from ShowSignalAccount import ShowSignalAccount
 from conn import conn_remote
+from system_config.tester_config import dapp_path, keys_addr
 
 
 def usage():
@@ -73,6 +74,6 @@ for opt, arg in opts:
         ToValue(int(1e18))
     elif opt == '-r' or opt == '--run':
         num = int(arg)
-        runProcessForTest(num)
+        runProcessForTest(num, dappdir=dapp_path, keysdir=keys_addr)
     elif opt == '-c' or opt == '--cfg':
         genConfig()

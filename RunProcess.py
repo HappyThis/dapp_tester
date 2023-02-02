@@ -1,9 +1,12 @@
 import os
+import platform
 from multiprocessing.dummy import Process
 from time import sleep
 
+from system_config.tester_config import dapp_main_file, dapp_listen, dapp_port
 
-def runProcessForTest(num, dappdir="/home/FL/DAPP/", keysdir="/home/ycq/keys/committees/", offset=0):
+
+def runProcessForTest(num, dappdir, keysdir, offset=0):
     for i in range(1 + offset, num + 1 + offset):
         os.chdir(dappdir)
         p = Process(target=testTask, kwargs={"id": i, "dir": dappdir, "keysdir": keysdir})
@@ -13,9 +16,21 @@ def runProcessForTest(num, dappdir="/home/FL/DAPP/", keysdir="/home/ycq/keys/com
 
 
 def testTask(id, dir, keysdir):
-    venv_python = dir + "venv/bin/python"
-    print(venv_python + " " + "app.py -h 0.0.0.0 -p " + str(20000 + id) + " -c " + " " + keysdir + str(
-        id) + "/config")
+    if platform.system() == "Windows":
+        venv_python = dir + "\\venv\\Scripts\\python.exe"
+        config_file = "\\config"
+        spt = "\\"
+    elif platform.system() == "Linux":
+        venv_python = dir + "venv/bin/python"
+        config_file = "/config"
+        spt = "/"
+    else:
+        print("unknown operating system")
+        exit()
+    print(venv_python + " " + dapp_main_file + " -h " + dapp_listen + " -p " + str(
+        dapp_port + id) + " -c " + " " + keysdir + spt + str(
+        id) + config_file)
     os.system(
-        venv_python + " " + "app.py -h 0.0.0.0 -p " + str(20000 + id) + " -c " + " " + keysdir + str(
-            id) + "/config")
+        venv_python + " " + dapp_main_file + " -h " + dapp_listen + " -p " + str(
+            dapp_port + id) + " -c " + " " + keysdir + spt + str(
+            id) + config_file)

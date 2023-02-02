@@ -9,8 +9,8 @@ def genConfig():
     names = os.listdir(keystroe)
     for name in names:
         cf = configparser.ConfigParser()
-        cf.read("config")
+        cf.read("init_config")
         cf.set("SYSTEM", "bc_pwd_file", "/home/ycq/keys/committees/" + name + "/pwd")
         cf.set("SYSTEM", "log", name)
-        cf.write(open("config", "w"))
-        shutil.copy("config", keystroe + name)
+        cf.write(open("system_config/init_config", "w"))
+        shutil.copy("system_config/init_config", keystroe + name)
